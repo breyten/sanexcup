@@ -85,34 +85,37 @@ def get_all_teams(team_id):
     return team_links
 
 def cmp_teams(a, b):
-    rate_a = a[2] * 1.0 / a[1]
-    rate_b = b[2] * 1.0 / b[1]
-    anti_rate_a = a[3] * 1.0 / a[1]
-    anti_rate_b = b[3] * 1.0 / b[1]
-    if a[2] == b[2]:
-        a_is_ds = (re.search(r'DS', a[0]) is not None)
-        b_is_ds = (re.search(r'DS', b[0]) is not None)
-        if a_is_ds == b_is_ds:
-            if a[3] == b[3]:
-                if rate_a == rate_b:
-                    if anti_rate_a == anti_rate_b:
-                        return 0
-                    elif anti_rate_a < anti_rate_b:
-                        return 1
-                    else:
-                        return -1
-                elif rate_a > rate_b:
+    IDX_GAMES = 1
+    IDX_SANEX = 2
+    IDX_ANTI_SANEX = 3
+    rate_a = a[IDX_SANEX] * 1.0 / a[IDX_GAMES]
+    rate_b = b[IDX_SANEX] * 1.0 / b[IDX_GAMES]
+    anti_rate_a = a[IDX_ANTI_SANEX] * 1.0 / a[IDX_GAMES]
+    anti_rate_b = b[IDX_ANTI_SANEX] * 1.0 / b[IDX_GAMES]
+
+    if a[IDX_SANEX] == b[IDX_SANEX]:
+        if rate_a == rate_b:
+            if anti_rate_a == anti_rate_b:
+                a_is_ds = (re.search(r'DS', a[0]) is not None)
+                b_is_ds = (re.search(r'DS', b[0]) is not None)
+                if a_is_ds == b_is_ds:
+                    return 0
+                elif a_is_ds:
                     return 1
                 else:
                     return -1
+            elif anti_rate_a < anti_rate_b:
+                return 1
             else:
-                return b[3] - a[3]
-        elif a_is_ds:
+                return -1
+        elif rate_a > rate_b:
             return 1
         else:
             return -1
+    elif a[IDX_SANEX] > b[IDX_SANEX]:
+        return 1
     else:
-        return a[2] - b[2]
+        return -1
 
 def main(argv=None):
     if argv is None:
