@@ -52,15 +52,21 @@ def get_sanex_counts(team_link):
             home_link = game.find('td', 'teamHome').a['href']
             is_home_game = (home_link == team_link)
             uitslag = game.find('td', 'score').span.string
-            games += 1
-            if is_home_game and uitslag == u'4-0':
-                sanex += 1
-            if is_home_game and uitslag == u'0-4':
-                anti_sanex += 1
-            if not is_home_game and uitslag == u'4-0':
-                anti_sanex += 1
-            if not is_home_game and uitslag == u'0-4':
-                sanex += 1
+            info = uitslag.split('-', 1)
+            if len(info) > 1:
+                num_sets = int(info[0]) + int(info[1])
+            else:
+                num_sets = 0
+            if num_sets >= 4:
+                games += 1
+                if is_home_game and uitslag == u'4-0':
+                    sanex += 1
+                if is_home_game and uitslag == u'0-4':
+                    anti_sanex += 1
+                if not is_home_game and uitslag == u'4-0':
+                    anti_sanex += 1
+                if not is_home_game and uitslag == u'0-4':
+                    sanex += 1
 
     return (games, sanex, anti_sanex)
 
