@@ -1,0 +1,4 @@
+sanexcup
+========
+
+Sanexcup calculator
