@@ -53,7 +53,7 @@ def get_sanex_counts(team_link):
             is_home_game = (home_link == team_link)
             uitslag = game.find('td', 'score').span.string
             info = uitslag.split('-', 1)
-            if len(info) > 1:
+            if info[0].strip() != u'':
                 num_sets = int(info[0]) + int(info[1])
             else:
                 num_sets = 0
