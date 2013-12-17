@@ -34,7 +34,7 @@ def get_sanex_counts(team_link):
     anti_sanex = 0
 
     try:
-        html = requests.get('http://www.volleybal.nl%s/uitslagen' % (team_link,)).text
+        html = requests.get('http://www.volleybal.nl%s/uitslagen/volledig' % (team_link,)).text
     except Exception, e:
         html = None
 
