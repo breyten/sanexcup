@@ -152,12 +152,17 @@ def main(argv=None):
         #pprint(sorted_data)
 
         num = 1
-        print "plek\tteam naam\tgesp\t4-0\t0-4\tpct"
+        print "plek\tteam naam \tgesp\t4-0\t0-4\tpct"
         print "-"*54
         for row in sorted_data:
             team_naam = row[0].replace(u'/competitie/team/', u'')
+            matches = re.search(r'^\d+(H|D)S\+?(\d+)', team_naam)
+            kind = "Heren"
+            if matches.group(1) == 'D':
+                kind = "Dames"
+            team_naam = u"%s %s" % (kind, matches.group(2))
             ratio = row[2] * 100.0 / row[1]
-            print "%d\t%s\t%s\t%d\t%d\t%.2f" % (num, team_naam, row[1], row[2], row[3], ratio,)
+            print "%d\t%s \t%s\t%d\t%d\t%.2f" % (num, team_naam, row[1], row[2], row[3], ratio,)
             num += 1
 
     except Usage, err:
