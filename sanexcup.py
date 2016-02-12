@@ -157,14 +157,12 @@ def main(argv=None):
                 team_id = int(value)
 
         team_links = get_all_teams(team_id)
-        pprint(team_links)
         data = {}
         for team_link in team_links:
             games, sanex, anti_sanex = get_sanex_counts(team_link)
             info = (team_link, games, sanex, anti_sanex)
             data[team_link] = info
 
-        pprint(data)
         sorted_data = sorted(data.values(), cmp=cmp_teams)
         sorted_data.reverse()
         #pprint(sorted_data)
