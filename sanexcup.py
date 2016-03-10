@@ -29,6 +29,10 @@ class Usage(Exception):
 
 
 def get_sanex_counts(team_link):
+    # FIXME: new structure is per team. link is like the following:
+    # http://www.volleybal.nl/handlers/competition/results.json?team=16705&start=0&amount=20&filtervalue=&filtertype=
+    # or, for a club:
+    # http://www.volleybal.nl/handlers/competition/results.json?club=CKL7K12&start=0&amount=20&filtervalue=&filtertype=
     games = 0
     sanex = 0
     anti_sanex = 0
