@@ -76,16 +76,21 @@ def get_sanex_counts(team_link):
 
 def get_all_teams(team_id):
     try:
-        html = requests.get('http://www.volleybal.nl/competitie/vereniging/%s/teams' % (team_id,)).text
+        resp = requests.get('http://www.volleybal.nl/handlers/competition/teams.json?club=%s&start=0&amount=25&filtervalue=&filtertype=' % (team_id,)).json()
     except Exception, e:
-        html = None
+        resp = None
 
-    if html is None:
+    if resp is None:
         return []
 
-    soup = BeautifulSoup(html)
-    team_cells = soup.findAll('td', 'team')
-    team_links = [t.find('a')['href'] for t in team_cells]
+    team_links = []
+    for html in resp['items']:
+        if html['html'].strip() == u'':
+            continue
+        soup = BeautifulSoup(html['html'])
+        link = soup.find('a')
+        if link['href'].startswith('/'):
+            team_links.append(link['href'])
     return team_links
 
 def cmp_teams(a, b):
@@ -136,7 +141,7 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv
 
-    team_id = 3208 # US
+    team_id = 'CKL7K12' # US
     as_html = False
 
     try:
@@ -161,6 +166,8 @@ def main(argv=None):
                 team_id = int(value)
 
         team_links = get_all_teams(team_id)
+        pprint(team_links)
+        return 0
         data = {}
         for team_link in team_links:
             games, sanex, anti_sanex = get_sanex_counts(team_link)
