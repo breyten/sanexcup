@@ -8,15 +8,12 @@ Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 """
 
 import sys
-import os
 import re
 import getopt
 
-from pprint import pprint
+# from pprint import pprint
 
-import requests
 import feedparser
-from BeautifulSoup import BeautifulSoup
 
 help_message = '''
 Sanex cup calculator
@@ -27,71 +24,6 @@ class Usage(Exception):
     def __init__(self, msg):
         self.msg = msg
 
-
-def get_sanex_counts(team_link):
-    # FIXME: new structure is per team. link is like the following:
-    # http://www.volleybal.nl/handlers/competition/results.json?team=16705&start=0&amount=20&filtervalue=&filtertype=
-    # or, for a club:
-    # http://www.volleybal.nl/handlers/competition/results.json?club=CKL7K12&start=0&amount=20&filtervalue=&filtertype=
-    games = 0
-    sanex = 0
-    anti_sanex = 0
-
-    try:
-        html = requests.get('http://www.volleybal.nl%s/uitslagen/volledig' % (team_link,)).text
-    except Exception, e:
-        html = None
-
-    if html is None:
-        return (0, -1, -1)
-
-    soup = BeautifulSoup(html)
-    #uitslagen = [s.find('span').string for s in soup.findAll('td', 'score')]
-
-    #for uitslag in uitslagen:
-    #    if uitslag
-
-    for week in soup.findAll('table', 'scheduleTabs'):
-        for game in week.tbody.findAll('tr'):
-            home_link = game.find('td', 'teamHome').a['href']
-            is_home_game = (home_link == team_link)
-            uitslag = game.find('td', 'score').span.string
-            info = uitslag.split('-', 1)
-            if info[0].strip() != u'':
-                num_sets = int(info[0]) + int(info[1])
-            else:
-                num_sets = 0
-            if num_sets >= 4:
-                games += 1
-                if is_home_game and uitslag == u'4-0':
-                    sanex += 1
-                if is_home_game and uitslag == u'0-4':
-                    anti_sanex += 1
-                if not is_home_game and uitslag == u'4-0':
-                    anti_sanex += 1
-                if not is_home_game and uitslag == u'0-4':
-                    sanex += 1
-
-    return (games, sanex, anti_sanex)
-
-def get_all_teams(team_id):
-    try:
-        resp = requests.get('http://www.volleybal.nl/handlers/competition/teams.json?club=%s&start=0&amount=25&filtervalue=&filtertype=' % (team_id,)).json()
-    except Exception, e:
-        resp = None
-
-    if resp is None:
-        return []
-
-    team_links = []
-    for html in resp['items']:
-        if html['html'].strip() == u'':
-            continue
-        soup = BeautifulSoup(html['html'])
-        link = soup.find('a')
-        if link['href'].startswith('/'):
-            team_links.append(link['href'])
-    return team_links
 
 def cmp_teams(a, b):
     IDX_GAMES = 1
@@ -137,17 +69,63 @@ def cmp_teams(a, b):
     else:
         return -1
 
+
+def get_result_for(game, club_name):
+    participants, result = re.split(r', Uitslag: ', game.title, 1)
+    home, away = re.split(' - ', participants, 1)
+    sanex_incr = 0
+    anti_sanex_incr = 0
+    regex = '.*%s\s+([D|H])S([\d|\s])+$' % (club_name,)
+    if re.match(regex, home):
+        team_id = home
+        if result == u'4-0':
+            sanex_incr = 1
+        if result == u'0-4':
+            anti_sanex_incr = -1
+    else:
+        team_id = away
+        if result == u'0-4':
+            sanex_incr = 1
+        if result == u'4-0':
+            anti_sanex_incr = -1
+    return team_id, sanex_incr, anti_sanex_incr
+
+
+def get_all_results(club_id, club_name):
+    data = {}
+
+    url = 'https://api.nevobo.nl/export/vereniging/%s/resultaten.rss' % (
+        club_id,)
+    try:
+        feed = feedparser.parse(url)
+    except Exception:
+        feed = None
+
+    if feed is None:
+        return data
+
+    for game in feed.entries:
+        team_id, sanex_incr, anti_sanex_incr = get_result_for(game, club_name)
+        if team_id not in data:
+            data[team_id] = [team_id, 0, 0, 0]
+        data[team_id][1] += 1
+        data[team_id][2] += sanex_incr
+        data[team_id][3] += anti_sanex_incr
+    return data
+
+
 def main(argv=None):
     if argv is None:
         argv = sys.argv
 
-    team_id = 'CKL7K12' # US
+    team_id = 'CKL7K12'  # US
+    team_name = 'US'
     as_html = False
 
     try:
         try:
             opts, args = getopt.getopt(
-                argv[1:], "Hhvt:", ["help", "team", "html"]
+                argv[1:], "Hhvtn:", ["help", "team", "html", "name"]
             )
         except getopt.error, msg:
             raise Usage(msg)
@@ -164,19 +142,13 @@ def main(argv=None):
                 as_html = True
             if option in ("-t", "--team"):
                 team_id = int(value)
-
-        team_links = get_all_teams(team_id)
-        pprint(team_links)
-        return 0
-        data = {}
-        for team_link in team_links:
-            games, sanex, anti_sanex = get_sanex_counts(team_link)
-            info = (team_link, games, sanex, anti_sanex)
-            data[team_link] = info
+            if option in ("-n", "--name"):
+                team_name = value
+        data = get_all_results(team_id, team_name)
 
         sorted_data = sorted(data.values(), cmp=cmp_teams)
         sorted_data.reverse()
-        #pprint(sorted_data)
+        # pprint(sorted_data)
 
         num = 1
         if as_html:
@@ -187,20 +159,23 @@ def main(argv=None):
             print "plek\tteam naam \tgesp\t4-0\t0-4\tpct"
             print "-"*54
         for row in sorted_data:
-            team_naam = row[0].replace(u'/competitie/team/', u'')
-            matches = re.search(r'^\d+(H|D)S\+?(\d+)', team_naam)
-            kind = "Heren"
-            if matches.group(1) == 'D':
-                kind = "Dames"
-            team_naam = u"%s %s" % (kind, matches.group(2))
+            regex = '.*%s\s+([D|H])S([\d|\s]+)$' % (team_name,)
+            matches = re.search(regex, row[0])
+            if matches:
+                x = {'D': 'Dames', 'H': 'Heren'}
+                team_naam = "%s %s" % (x[matches.group(1)], matches.group(2),)
+            else:
+                team_naam = row[0]
+            team_naam = row[0]
             if row[1] > 0:
                 ratio = row[2] * 100.0 / row[1]
             else:
                 ratio = 0.0
             if as_html:
-                print "<tr><td>%d</td><td>%s</td><td>%s</td><td>%d</td><td>%d</td><td>%.2f</td></tr>" % (
-                    num, team_naam, row[1], row[2], row[3], ratio,
-                )
+                print (
+                    "<tr><td>%d</td><td>%s</td><td>%s</td><td>%d</td><td>"
+                    "%d</td><td>%.2f</td></tr>") % (
+                        num, team_naam, row[1], row[2], row[3], ratio,)
             else:
                 print "%d\t%s \t%s\t%d\t%d\t%.2f" % (
                     num, team_naam, row[1], row[2], row[3], ratio,
