@@ -11,7 +11,7 @@ import sys
 import re
 import getopt
 
-# from pprint import pprint
+from pprint import pprint
 
 import feedparser
 
@@ -81,13 +81,13 @@ def get_result_for(game, club_name):
         if result == u'4-0':
             sanex_incr = 1
         if result == u'0-4':
-            anti_sanex_incr = -1
+            anti_sanex_incr = 1
     else:
         team_id = away
         if result == u'0-4':
             sanex_incr = 1
         if result == u'4-0':
-            anti_sanex_incr = -1
+            anti_sanex_incr = 1
     return team_id, sanex_incr, anti_sanex_incr
 
 
@@ -148,16 +148,17 @@ def main(argv=None):
 
         sorted_data = sorted(data.values(), cmp=cmp_teams)
         sorted_data.reverse()
-        # pprint(sorted_data)
 
         num = 1
+        longest_name = max([len(x[0]) for x in sorted_data])
         if as_html:
             print "<table class=\"table-striped\"><tr>"
             print "<th>Plek</th><th>Team</th><th>Gespeeld</th>"
             print "<th>4-0</th><th>0-4</th><th>Percentage</th></tr>"
         else:
-            print "plek\tteam naam \tgesp\t4-0\t0-4\tpct"
-            print "-"*54
+            print ("%s\t%-" + str(longest_name) + "s\t%s\t%s\t%s\t%s") % (
+                "plek", "team naam", "gesp", "4-0", "0-4", "pct",)
+            print "-"*(54 + longest_name)
         for row in sorted_data:
             regex = '.*%s\s+([D|H])S([\d|\s]+)$' % (team_name,)
             matches = re.search(regex, row[0])
@@ -177,7 +178,7 @@ def main(argv=None):
                     "%d</td><td>%.2f</td></tr>") % (
                         num, team_naam, row[1], row[2], row[3], ratio,)
             else:
-                print "%d\t%s \t%s\t%d\t%d\t%.2f" % (
+                print ("%d\t%-" + str(longest_name) + "s\t%s\t%d\t%d\t%.2f") % (
                     num, team_naam, row[1], row[2], row[3], ratio,
                 )
             num += 1
