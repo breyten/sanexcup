@@ -72,7 +72,7 @@ def cmp_teams(a, b):
 
 def get_result_for(game, club_name):
     participants, result = re.split(r', Uitslag: ', game.title, 1)
-    home, away = re.split(' - ', participants, 1)
+    home, away = re.split(' - ', participants.replace(' - USV', '/USV'), 1)
     sanex_incr = 0
     anti_sanex_incr = 0
     regex = '.*%s\s+([D|H])S([\d|\s])+$' % (club_name,)
@@ -145,7 +145,6 @@ def main(argv=None):
             if option in ("-n", "--name"):
                 team_name = value
         data = get_all_results(team_id, team_name)
-
         sorted_data = sorted(data.values(), cmp=cmp_teams)
         sorted_data.reverse()
 
