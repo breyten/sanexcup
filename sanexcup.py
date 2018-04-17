@@ -76,19 +76,22 @@ def get_result_for(game, club_name):
     sanex_incr = 0
     anti_sanex_incr = 0
     regex = '.*%s\s+([D|H])S([\d|\s])+$' % (club_name,)
+    results = []
     if re.match(regex, home):
         team_id = home
         if result == u'4-0':
             sanex_incr = 1
         if result == u'0-4':
             anti_sanex_incr = 1
-    else:
+        results.append((team_id, sanex_incr, anti_sanex_incr,))
+    if re.match(regex, away):
         team_id = away
         if result == u'0-4':
             sanex_incr = 1
         if result == u'4-0':
             anti_sanex_incr = 1
-    return team_id, sanex_incr, anti_sanex_incr
+        results.append((team_id, sanex_incr, anti_sanex_incr,))
+    return results
 
 
 def get_all_results(club_id, club_name):
@@ -105,12 +108,13 @@ def get_all_results(club_id, club_name):
         return data
 
     for game in feed.entries:
-        team_id, sanex_incr, anti_sanex_incr = get_result_for(game, club_name)
-        if team_id not in data:
-            data[team_id] = [team_id, 0, 0, 0]
-        data[team_id][1] += 1
-        data[team_id][2] += sanex_incr
-        data[team_id][3] += anti_sanex_incr
+        results = get_result_for(game, club_name)
+        for team_id, sanex_incr, anti_sanex_incr in results:
+            if team_id not in data:
+                data[team_id] = [team_id, 0, 0, 0]
+            data[team_id][1] += 1
+            data[team_id][2] += sanex_incr
+            data[team_id][3] += anti_sanex_incr
     return data
 
 
