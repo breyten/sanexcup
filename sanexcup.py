@@ -72,7 +72,7 @@ def cmp_teams(a, b):
 
 def get_result_for(game, club_name):
     participants, result = re.split(r', Uitslag: ', game.title, 1)
-    home, away = re.split(' - ', participants.replace(' - USV', '/USV'), 1)
+    home, away = re.split(' - ', participants, 1)
     sanex_incr = 0
     anti_sanex_incr = 0
     regex = '.*%s\s+([D|H])S([\d|\s])+$' % (club_name,)
@@ -108,6 +108,8 @@ def get_all_results(club_id, club_name):
         return data
 
     for game in feed.entries:
+        if  not ', Uitslag: ' in game.title:
+            continue
         results = get_result_for(game, club_name)
         for team_id, sanex_incr, anti_sanex_incr in results:
             if team_id not in data:
