@@ -107,9 +107,13 @@ def get_all_results(club_id, club_name):
     if feed is None:
         return data
 
+    counted = {}
     for game in feed.entries:
+        if game.link in counted:
+            continue
         if  not ', Uitslag: ' in game.title:
             continue
+        counted[game.link] = 1
         results = get_result_for(game, club_name)
         for team_id, sanex_incr, anti_sanex_incr in results:
             if team_id not in data:
