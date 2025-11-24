@@ -72,10 +72,11 @@ def cmp_teams(a, b):
 
 def get_result_for(game, club_name):
     participants, result = re.split(r', Uitslag: ', game.title, 1)
-    home, away = re.split(' - ', participants, 1)
+    home, gender, category, team_nr, away = re.split('\s+([D|H|J|M|X])(S|A|B|C)([\d|\s])+\s+-\s+', participants, 4)
+    home = home + ' ' + gender + category + ' ' + str(team_nr)
     sanex_incr = 0
     anti_sanex_incr = 0
-    regex = '.*%s\s+([D|H])S([\d|\s])+$' % (club_name,)
+    regex = '.*%s\s+([D|H|J|M|X])(S|A|B|C)([\d|\s])+$' % (club_name,)
     results = []
     if re.match(regex, home):
         team_id = home
@@ -99,6 +100,8 @@ def get_all_results(club_id, club_name):
 
     url = 'https://api.nevobo.nl/export/vereniging/%s/resultaten.rss' % (
         club_id,)
+
+    #pprint(url)
     try:
         feed = feedparser.parse(url)
     except Exception:
